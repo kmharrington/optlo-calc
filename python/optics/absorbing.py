@@ -135,6 +135,39 @@ class ABCD_Filter_Angle(ABCD_Filter):
         super(ABCD_Filter, self).__init__(name, temperature, spill,
                 spill_temperature)
         
+class ABCD_Filter_IndexFunct(ABCD_Filter):
+    """
+    Extending ABCD filters to use different effective index models
+    """
+    def __init__(self, name, tau, theta_i, temperature, spill,
+                spill_temperature, align='TE'):
+        """
+        angle of incidence assumed to be in radians. 
+        """
+        self.tau = tau
+        self.cosi = np.cos(theta_i)
+        
+        self.gamma = lambda nu: (-2.0j*np.pi*nu*self.cosi*self.index(nu)/const.c).to(1/u.cm)
+        
+        if align == 'TE':
+            self.eta = lambda nu: (-2.0j*np.pi*nu*self.cosi/const.c * eta0 / self.gamma(nu) / self.cosi).to(u.ohm)
+        elif align == 'TM':
+            self.eta = lambda nu: (-2.0j*np.pi*nu*self.cosi/const.c * eta0 *self.cosi / self.gamma(nu)  ).to(u.ohm)
+            
+        self.A = lambda nu: np.cosh(self.gamma(nu)*self.tau*u.radian)
+        self.B = lambda nu: 1.0*self.eta(nu)*np.sinh(self.gamma(nu)*self.tau*u.radian)
+        self.C = lambda nu: 1.0/self.eta(nu)*np.sinh(self.gamma(nu)*self.tau*u.radian)
+        self.D = lambda nu: np.cosh(self.gamma(nu)*self.tau*u.radian)
+        
+        super(ABCD_Filter, self).__init__(name, temperature, spill,
+                spill_temperature)      
+    
+    def index(nu):
+        raise NotImplementedError
+
+    def set_angle(self, angle):
+        self.cosi = np.cos(angle)
+        
 class Stacked_ABCD_Filter(_ABCD_Filter):
     
     def __init__(self, name, stack, temperature, spill, spill_temperature):
