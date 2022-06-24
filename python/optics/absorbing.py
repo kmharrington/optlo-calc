@@ -104,7 +104,37 @@ class ABCD_Filter(_ABCD_Filter):
         C = self.C(freqs)
         D = self.D(freqs)
         return (A,B,C,D)
-    
+
+class ABCD_Filter_Angle(ABCD_Filter):
+    """
+    Extending ABCD filters to deal with angles
+    """
+    def __init__(self, name, n_re, n_im, tau, theta_i, temperature, spill,
+                spill_temperature, align='TE', n_im_slope=0):
+        """
+        angle of incidence assumed to be in radians. 
+        """
+        self.n_re = n_re
+        self.n_im = n_im
+        self.tau = tau
+        self.cosi = np.cos(theta_i)
+        
+        self.index = lambda nu : (self.n_re + 1.0j*self.n_im*nu.value**n_im_slope)
+        
+        self.gamma = lambda nu: (-2.0j*np.pi*nu*self.cosi*self.index(nu)/const.c).to(1/u.cm)
+        if align == 'TE':
+            self.eta = lambda nu: (-2.0j*np.pi*nu*self.cosi/const.c * eta0 / self.gamma(nu) / self.cosi).to(u.ohm)
+        elif align == 'TM':
+            self.eta = lambda nu: (-2.0j*np.pi*nu*self.cosi/const.c * eta0 *self.cosi / self.gamma(nu)  ).to(u.ohm)
+            
+        self.A = lambda nu: np.cosh(self.gamma(nu)*self.tau*u.radian)
+        self.B = lambda nu: 1.0*self.eta(nu)*np.sinh(self.gamma(nu)*self.tau*u.radian)
+        self.C = lambda nu: 1.0/self.eta(nu)*np.sinh(self.gamma(nu)*self.tau*u.radian)
+        self.D = lambda nu: np.cosh(self.gamma(nu)*self.tau*u.radian)
+        
+        super(ABCD_Filter, self).__init__(name, temperature, spill,
+                spill_temperature)
+        
 class Stacked_ABCD_Filter(_ABCD_Filter):
     
     def __init__(self, name, stack, temperature, spill, spill_temperature):

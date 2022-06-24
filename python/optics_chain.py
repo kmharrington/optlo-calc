@@ -3,7 +3,7 @@ import yaml
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
-import astropy.modeling.blackbody as blackbody
+from astropy.modeling.models import BlackBody
 
 import optlo_calc.utils as utils
 import optlo_calc.optics as optics
@@ -45,7 +45,7 @@ class Optics_Chain(object):
         '''
         if freqs is None:
             freqs = np.linspace(2, 1000, 10000)*u.GHz
-        power_in = blackbody.blackbody_nu(freqs, temperature_in)*(utils.through_put(freqs) )
+        power_in = BlackBody(temperature_in)(freqs)*(utils.through_put(freqs) )
         stage_power, _ , _ = self.calc_power_transfer(freqs, power_in)
 
         return np.trapz( stage_power[-1], freqs).to(u.pW)

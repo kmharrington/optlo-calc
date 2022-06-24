@@ -14,3 +14,16 @@ class Detector(Optic):
     
     def get_transmission(self, freqs):
         return self._get_value(self.bandpass, freqs)
+    
+    @classmethod
+    def from_band_edges(cls, name, edges, temperature, efficiency=1.0):
+        band = lambda f: efficiency*tophat(f, edges[0], edges[1])
+        return cls(name, band, temperature)
+    
+    
+def tophat(freqs, low, high):
+    out = np.zeros( np.shape(freqs) )
+    msk = np.all([freqs >= low,
+                  freqs < high], axis=0)
+    out[msk]=1
+    return out

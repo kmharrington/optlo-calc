@@ -1,7 +1,7 @@
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
-import astropy.modeling.blackbody as blackbody
+from astropy.modeling.models import BlackBody
 
 import scipy.interpolate as spint
 
@@ -134,11 +134,11 @@ class Optic(object):
         return self.get_absorption(freqs)*power
         
     def get_emitted_power(self, freqs):
-        bb = blackbody.blackbody_nu(freqs, self.get_temperature(freqs)*u.Kelvin )
+        bb = Blackbody(self.get_temperature(freqs)*u.Kelvin)(freqs )
         return self.get_absorption(freqs) * bb * utils.through_put(freqs)
     
     def get_spill_power(self, freqs):
-        bb = blackbody.blackbody_nu(freqs, self.get_spill_temperature(freqs)*u.Kelvin )
+        bb = Blackbody(self.get_spill_temperature(freqs)*u.Kelvin)(freqs )
         return self.get_spill(freqs) * bb * utils.through_put(freqs)
     
     '''
